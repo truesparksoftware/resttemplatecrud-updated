@@ -24,21 +24,18 @@ public class BankController {
 
 	@GetMapping("/all")
 	public List<Bank> getAllBanks() {
-		// System.out.println("jwt token"+jwt);
 		List<Bank> bankList = bankRepository.findAll();
 		return bankList;
 	}
 
-	@GetMapping("/onebank")
-	public Bank getOneBank() {
-		// System.out.println("jwt token"+jwt);
-		Bank b1 = new Bank(123, "INDUs", "Mum", "govt");
-		return b1;
+	@GetMapping("/onebank/{id}")
+	public Bank getOneBank(@PathVariable Integer id) {
+		Optional<Bank> bank= bankRepository.findById(id);
+		return bank.get();
 	}
 
 	@PostMapping("/save")
 	public Bank saveBankIntoDB(@RequestBody Bank bank) {
-		// System.out.println("jwt token"+jwt);
 		Bank bankEntity = bankRepository.save(bank);
 		return bankEntity;
 	}

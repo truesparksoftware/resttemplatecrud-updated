@@ -1,6 +1,8 @@
 package com;
 
+import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
@@ -14,9 +16,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.util.*;
-
-
 
 @RestController
 @RequestMapping("/client")
@@ -26,24 +30,38 @@ public class ClientController {
 	RestTemplate restTemplate;
 
 	@GetMapping("/getallbanks")
-	public List<Bank> getAllBank() {
+	public List<Bank> getAllBank() throws JSONException {
 		Bank b = new Bank();
-		HttpEntity entity = new HttpEntity(b);
-		ResponseEntity res = restTemplate.exchange("http://localhost:9090/bank/onebank", HttpMethod.GET, entity,
-				Bank.class);
+		HttpEntity<Bank> entity = new HttpEntity(b);
+		ResponseEntity<List<Bank>> bankList = restTemplate.exchange("http://localhost:9090/bank/all", HttpMethod.GET, entity,
+				new ParameterizedTypeReference<List<Bank>>() {
+				});
 
-		System.out.println(res.getBody().toString());
-
-		return null;
+		return bankList.getBody();
 	}
 
+
+	
+	@GetMapping("/getbankbyid/{id}")
+	public Bank getOneBank(@PathVariable Integer id) {
+		HttpEntity entity = new HttpEntity<Bank>(new Bank());
+		Map<String, Integer> vars = new HashMap<>();
+		vars.put("id", id);
+		ResponseEntity<Bank> bank = restTemplate.exchange("http://localhost:9090/bank//onebank/{id}", HttpMethod.GET, entity,
+				Bank.class,vars);
+
+		return bank.getBody();
+	}
+	
+	
 	@PostMapping("/save")
-	public Bank saveBank(@RequestBody Bank bank) {
+	public Bank saveBank(@RequestBody Bank bank) throws JsonMappingException, JsonProcessingException {
 		HttpEntity<Bank> entity = new HttpEntity<Bank>(bank);
 		ResponseEntity res = restTemplate.exchange("http://localhost:9090/bank/save", HttpMethod.POST, entity,
 				Bank.class);
-		Bank b1 = (Bank) res.getBody();
-		return b1;
+		ObjectMapper mapper = new ObjectMapper();
+		Bank rootNode = mapper.readValue(res.toString(), Bank.class);
+		return rootNode;
 	}
 
 	@DeleteMapping("/delete/{id}")
@@ -51,12 +69,8 @@ public class ClientController {
 		HttpEntity<Integer> entity = new HttpEntity<Integer>(id);
 		Map<String, Integer> vars = new HashMap<>();
 		vars.put("id", id);
-
 		ResponseEntity<String> res = restTemplate.exchange("http://localhost:9090/bank/delete/{id}", HttpMethod.DELETE,
 				entity, String.class, vars);
-		System.out.println("responseEntity...." + res.toString());
-
-		System.out.println("responseEntity...." + res.getBody());
 		return res.getBody();
 	}
 
